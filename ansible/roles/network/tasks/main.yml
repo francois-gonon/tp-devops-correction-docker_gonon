@@ -1,0 +1,10 @@
+---
+# tasks file for roles/network
+
+- name: Create application Docker network
+  docker_network:
+    name: my_app_network
+    state: present
+  vars:
+    # force use of the Python3 interpreter explicitly
+    ansible_python_interpreter: /usr/bin/python3

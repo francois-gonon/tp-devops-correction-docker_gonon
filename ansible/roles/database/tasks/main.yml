@@ -1,0 +1,15 @@
+---
+# tasks file for roles/database
+
+- name: Launch PostgreSQL container
+  docker_container:
+    name: my_database
+    image: francoisgonon/tp-devops-database
+    pull: yes
+    env:
+      POSTGRES_USER: usr
+      POSTGRES_PASSWORD: pwd
+      POSTGRES_DB: db
+    networks:
+      - name: my_app_network
+    state: started
