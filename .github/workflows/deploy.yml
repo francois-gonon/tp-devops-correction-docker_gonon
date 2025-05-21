@@ -1,0 +1,27 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - production
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -t rsa ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+      
+      - name: Run Ansible playbook in Docker
+        run: |
+          docker run --rm -v $(pwd):/ansible -w /ansible \
+          -v ~/.ssh:/root/.ssh \
+          willhallonline/ansible:latest \
+          ansible-playbook -i ansible/inventories/setup.yml ansible/playbook.yml
