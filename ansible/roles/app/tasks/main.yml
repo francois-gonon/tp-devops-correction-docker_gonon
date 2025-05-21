@@ -1,0 +1,17 @@
+---
+# tasks file for roles/app
+
+- name: Launch backend application container
+  docker_container:
+    name: my_app
+    image: francoisgonon/tp-devops-simple-api
+    pull: yes
+    env:
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://my_database:5432/db"
+      SPRING_DATASOURCE_USERNAME: usr
+      SPRING_DATASOURCE_PASSWORD: pwd
+    networks:
+      - name: my_app_network
+    ports:
+      - "8000:8000"
+    state: started

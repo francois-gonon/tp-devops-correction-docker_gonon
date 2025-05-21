@@ -1,0 +1,23 @@
+---
+# Docker Installation Playbook for Debian
+# Based on: https://docs.docker.com/engine/install/debian/#install-using-the-repository
+
+- hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    # Map Ansible's x86_64 fact to Debian's amd64
+    docker_arch: "{{ 'amd64' if ansible_architecture == 'x86_64' else ansible_architecture }}"
+
+    ansible_python_interpreter: /usr/bin/python3
+
+  collections:
+    - community.docker
+
+  roles:
+    - docker
+    - network
+    - database
+    - app
+    - proxy
