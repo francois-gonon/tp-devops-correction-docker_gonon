@@ -1,0 +1,118 @@
+---
+# Docker Installation Playbook for Debian
+# Based on: https://docs.docker.com/engine/install/debian/#install-using-the-repository
+
+- hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    # Map Ansible's x86_64 fact to Debian's amd64
+    docker_arch: "{{ 'amd64' if ansible_architecture == 'x86_64' else ansible_architecture }}"
+
+  tasks:
+    - name: Remove old Docker versions, if present
+      apt:
+        name:
+          - docker
+          - docker-engine
+          - docker.io
+          - containerd
+          - runc
+        state: absent
+
+    - name: Install prerequisites for Docker
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - python3-venv
+        state: latest
+        update_cache: yes
+
+    - name: Create /etc/apt/keyrings
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Download and dearmor Docker GPG key
+      shell: |
+        curl -fsSL https://download.docker.com/linux/debian/gpg \
+          | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+      args:
+        creates: /etc/apt/keyrings/docker.gpg
+
+    - name: Ensure correct permissions on Docker GPG key
+      file:
+        path: /etc/apt/keyrings/docker.gpg
+        mode: '0644'
+
+    - name: Add Docker APT repository
+      apt_repository:
+        repo: "deb [arch={{ docker_arch }} signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
+        filename: docker
+        state: present
+
+    - name: Refresh APT cache
+      apt:
+        update_cache: yes
+
+    - name: Install Docker Engine and Compose plugin
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+
+    - name: Install Python3 (system) ─ optional
+      apt:
+        name: python3
+        state: present
+
+    - name: Create Python venv for Docker SDK
+      command: python3 -m venv /opt/docker_venv
+      args:
+        creates: /opt/docker_venv
+
+    - name: Install Docker SDK for Python into venv
+      pip:
+        name: docker
+        virtualenv: /opt/docker_venv
+        state: present
+
+    - name: Ensure Docker service is running and enabled
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Verify Docker installation with hello-world
+      command: docker run --rm hello-world
+      register: hello_world
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Show hello-world output
+      debug:
+        var: hello_world.stdout_lines
+      when: hello_world.rc == 0
+
+    - name: Add Ansible user to docker group
+      user:
+        name: "{{ ansible_user_id }}"
+        groups: docker
+        append: yes
+      when: ansible_user_id is defined
+
+    - name: Notify about group membership change
+      debug:
+        msg: "Added {{ ansible_user_id }} to the docker group. Re-login for changes to take effect."
+      when: ansible_user_id is defined
+

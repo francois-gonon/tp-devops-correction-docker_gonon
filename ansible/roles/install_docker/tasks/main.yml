@@ -1,0 +1,13 @@
+---
+- hosts: all
+  become: true
+  vars:
+    # Ensure every module uses the same Python interpreter
+    ansible_python_interpreter: /usr/bin/python3
+
+  roles:
+    - install_docker
+    - create_network
+    - launch_database
+    - launch_app
+    - launch_proxy
