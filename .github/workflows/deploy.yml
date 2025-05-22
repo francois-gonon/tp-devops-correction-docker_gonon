@@ -20,15 +20,15 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             # Pull the latest backend image
-            docker pull francois/devops-backend:latest
+            docker pull francoisgonon/tp-devops-simple-api:latest
             
             # Restart only the backend container
-            docker container restart backend-api || (
+            docker container restart my_app || (
               echo "Container not running, starting new container..."
-              docker run -d --name backend-api \
+              docker run -d --name my_app \
                 --network app-network \
                 -p 8080:8080 \
-                francois/devops-backend:latest
+                francoisgonon/tp-devops-simple-api:latest
             )
             
             echo "Backend service redeployed successfully"
