@@ -27,10 +27,13 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: admin
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            # Check for required software
+          script: |            # Check for required software
             command -v ansible-playbook >/dev/null 2>&1 || { echo "Installing Ansible..."; sudo apt-get update && sudo apt-get install -y ansible; }
+            
+            # Create an ansible config file to disable host key checking
+            echo "[defaults]" > /tmp/ansible.cfg
+            echo "host_key_checking = False" >> /tmp/ansible.cfg
             
             # Run ansible playbook directly from the copied files
             cd /tmp/tp-devops-deployment/ansible
-            ansible-playbook -i inventories/setup.yml deploy-backend.yml
+            ANSIBLE_CONFIG=/tmp/ansible.cfg ansible-playbook -i inventories/setup.yml deploy-backend.yml
