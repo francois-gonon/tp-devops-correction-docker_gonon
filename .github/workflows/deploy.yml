@@ -11,18 +11,24 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-        
-      - name: Set up SSH key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -t rsa ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
       
-      - name: Run Ansible playbook in Docker
-        run: |
-          docker run --rm -v $(pwd):/ansible -w /ansible \
-          -v ~/.ssh:/root/.ssh \
-          -e ANSIBLE_HOST_KEY_CHECKING=False \
-          willhallonline/ansible:latest \
-          ansible-playbook -i ansible/inventories/setup.yml ansible/playbook.yml --private-key=/root/.ssh/id_rsa
+      - name: Deploy Backend via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: admin
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            # Pull the latest backend image
+            docker pull francois/devops-backend:latest
+            
+            # Restart only the backend container
+            docker container restart backend-api || (
+              echo "Container not running, starting new container..."
+              docker run -d --name backend-api \
+                --network app-network \
+                -p 8080:8080 \
+                francois/devops-backend:latest
+            )
+            
+            echo "Backend service redeployed successfully"
