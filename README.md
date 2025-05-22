@@ -15,6 +15,36 @@ We push doker images with commands in main.yml so that the newest version of ima
 
 Questions for TP3 : 
 
+3-1 Document your inventory and base commands
+
+Inventory:
+- Located at `ansible/inventories/setup.yml`
+- Contains target host configuration 
+
+Base Commands:
+- `ansible-playbook -i inventories/setup.yml playbook.yml`: Executes deployment
+- Role structure: docker → network → database → app → proxy
+
+3-2 Document your playbook
+
+- Main file: `ansible/playbook.yml`
+- Installs Docker and sets up application infrastructure
+- Uses modular roles to separate "modules"
+- Configures Python interpreter
+- Includes community Docker collection for managing containers
+- Executes roles sequentially 
+
 Is it really safe to deploy automatically every new image on the hub ? explain. What can I do to make it more secure?
+
+- Key configurations:
+  - name: Sets unique container name
+  - image: Specifies Docker image to use
+  - restart_policy: Set to "always" for automatic restarts
+  - networks: Connects containers
+  - env: Sets environment variables like DB credentials
+  - ports: Maps container ports to host ports
+  - volumes: Mounts persistent storage for data retention
+- State is "started" to ensure containers are running
+- Uses pull: "yes" to ensure latest images are used
 
 pushing every image can be dangerous because there are no verification step and any merge/accidental edits to tamper with the codebase
