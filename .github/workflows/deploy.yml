@@ -9,6 +9,18 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Copy files to server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: admin
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "ansible/"
+          target: "/tmp/tp-devops-deployment"
+      
       - name: Deploy via SSH command
         uses: appleboy/ssh-action@v1.0.0
         with:
@@ -16,8 +28,9 @@ jobs:
           username: admin
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ~/tp-devops-repo || git clone https://github.com/FrancoisGonon/tp-devops-correction-docker.git ~/tp-devops-repo
-            cd ~/tp-devops-repo
-            git pull
-            cd ansible
+            # Check for required software
+            command -v ansible-playbook >/dev/null 2>&1 || { echo "Installing Ansible..."; sudo apt-get update && sudo apt-get install -y ansible; }
+            
+            # Run ansible playbook directly from the copied files
+            cd /tmp/tp-devops-deployment/ansible
             ansible-playbook -i inventories/setup.yml deploy-backend.yml
