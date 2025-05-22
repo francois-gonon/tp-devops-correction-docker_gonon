@@ -1,0 +1,16 @@
+---
+# Check if Docker is installed and running
+- name: Check if Docker is installed
+  command: docker --version
+  register: docker_version
+  changed_when: false
+  failed_when: false
+
+- name: Ensure Docker is installed
+  ansible.builtin.apt:
+    name: 
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+    state: present
+  when: docker_version.rc != 0

@@ -11,24 +11,24 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-      
-      - name: Deploy Backend via SSH
-        uses: appleboy/ssh-action@v1.0.0
+        
+      - name: Set up Python
+        uses: actions/setup-python@v4
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: admin
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            # Pull the latest backend image
-            docker pull francoisgonon/tp-devops-simple-api:latest
-            
-            # Restart only the backend container
-            docker container restart my_app || (
-              echo "Container not running, starting new container..."
-              docker run -d --name my_app \
-                --network app-network \
-                -p 8080:8080 \
-                francoisgonon/tp-devops-simple-api:latest
-            )
-            
-            echo "Backend service redeployed successfully"
+          python-version: '3.10'
+          
+      - name: Install Ansible
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible
+          
+      - name: Set up SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -t rsa ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+          
+      - name: Run Ansible playbook
+        run: |
+          ansible-playbook -i ansible/inventories/setup.yml ansible/deploy-backend.yml

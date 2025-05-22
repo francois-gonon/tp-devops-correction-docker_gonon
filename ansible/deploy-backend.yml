@@ -1,0 +1,16 @@
+---
+# Backend-only deployment playbook
+- hosts: all
+  become: true
+  gather_facts: true
+
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+
+  collections:
+    - community.docker
+
+  roles:
+    - docker
+    - network
+    - app
